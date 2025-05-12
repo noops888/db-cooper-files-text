@@ -36,7 +36,7 @@ The D.B. Cooper Files Text repository provides a dataset of FBI case files relat
 
 | Date | Status | Extraction Method | Files Downloaded | Size | Total Files Listed |
 |--------------|---------|-------------------|------------------|------|-------------------|
-| 2025-05-12 | ⏳ In Progress | Apple Vision OCR | 106 | 1.86GB | 106 |
+| 2025-05-12 | ✅ Complete | Apple Vision OCR | 106 | 1.86GB | 106 |
 
 ## Prerequisites
 - Python 3.8+
