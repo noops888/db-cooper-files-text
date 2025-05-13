@@ -258,6 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 markdown += delta;
                                 const linked = linkifyDocs(markdown);
                                 answerContent.innerHTML = marked.parse(linked);
+                                // make links open in new tab
+                                answerContent.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
                                 messageList.scrollTop = messageList.scrollHeight;
                             }
                         } catch (e) {
@@ -301,6 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             summary.textContent = 'Answer';
             answerContent.innerHTML = marked.parse(linkifyDocs(respText));
+            // make links open in new tab
+            answerContent.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
             // Append source links if retrieval info present
             const retrievals = Array.isArray(jsonResult.retrieval_info?.results)
               ? jsonResult.retrieval_info.results
