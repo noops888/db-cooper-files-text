@@ -1,3 +1,5 @@
+import { autoragConfig } from './autoragConfig';
+
 export async function onRequest({ request, env }) {
   if (request.method !== 'POST') {
     return new Response(null, { status: 405, statusText: 'Method Not Allowed' });
@@ -16,12 +18,16 @@ export async function onRequest({ request, env }) {
   }
   try {
     console.log('[CHAT][SERVER] aiSearch params:', { query, include_retrieval_info: true, rewrite_query: true, max_num_results, match_threshold });
+    const cfg = autoragConfig;
     const result = await env.AI.autorag('db-cooper-autorag').aiSearch({
       query,
       include_retrieval_info: true,
-      rewrite_query: true,
-      max_num_results,
-      match_threshold
+      rewrite_query: cfg.rewrite_query,
+      max_num_results: cfg.max_num_results,
+      match_threshold: cfg.ranking_options.score_threshold,
+      stream: cfg.stream
+      // model: cfg.model,
+      // filters: cfg.filters
     });
     console.log('[CHAT][SERVER] aiSearch result:', JSON.stringify(result, null, 2));
     return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
