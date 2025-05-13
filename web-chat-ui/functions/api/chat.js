@@ -23,7 +23,8 @@ export async function onRequest({ request, env }) {
       include_retrieval_info: true
     });
   } catch (err) {
-    return new Response(JSON.stringify({ response: 'Capacity temporarily exceeded, please try again later.' }), {
+    console.error("AutoRAG aiSearch error:", err);
+    return new Response(JSON.stringify({ response: err.message }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
