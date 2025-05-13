@@ -30,10 +30,36 @@ export async function onRequest({ request, env }) {
       // filters: cfg.filters
     };
     console.log('[CHAT][SERVER] aiSearch params:', params);
+    // perform AI search
     const aiResponse = await env.AI.autorag('db-cooper-autorag').aiSearch(params);
     if (cfg.stream) {
-      console.log('[CHAT][SERVER] streaming enabled, piping response as event-stream');
-      return new Response(aiResponse.body, { headers: { 'Content-Type': 'text/event-stream' } });
+      console.log('[CHAT][SERVER] streaming enabled, fetching metadata for retrievals');
+      // fetch non-streaming metadata for sources
+      const metaParams = { ...params, stream: false };
+      const metaResult = await env.AI.autorag('db-cooper-autorag').aiSearch(metaParams);
+      const retrievals = Array.isArray(metaResult.retrieval_info?.results)
+        ? metaResult.retrieval_info.results
+        : Array.isArray(metaResult.data)
+          ? metaResult.data
+          : [];
+      console.log('[CHAT][SERVER] piping streaming response');
+      const streamParams = { ...params, stream: true };
+      const streamResponse = await env.AI.autorag('db-cooper-autorag').aiSearch(streamParams);
+      // combine streams: emit retrievals first, then SSE events
+      const composite = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+          const metaChunk = JSON.stringify({ retrieval_info: { results: retrievals } });
+          controller.enqueue(encoder.encode(`data: ${metaChunk}\n\n`));
+          const reader = streamResponse.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) { controller.close(); break; }
+            controller.enqueue(value);
+          }
+        }
+      });
+      return new Response(composite, { headers: { 'Content-Type': 'text/event-stream' } });
     }
     console.log('[CHAT][SERVER] aiSearch result:', JSON.stringify(aiResponse, null, 2));
     return new Response(JSON.stringify(aiResponse), { headers: { 'Content-Type': 'application/json' } });

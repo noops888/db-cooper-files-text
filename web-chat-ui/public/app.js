@@ -228,8 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let buffer = '';
                 let markdown = '';
                 let retrievals = [];
-                summary.textContent = '';
-                answerContent.innerHTML = '';
+                // keep 'Thinking...' until complete
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) break;
@@ -257,6 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 }
+                // mark completion
+                summary.textContent = 'Answer';
                 // append sources after streaming
                 if (retrievals.length) {
                     const sourcesDiv = document.createElement('div');
