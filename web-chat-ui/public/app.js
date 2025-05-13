@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Details - Injected from environment variable
     const agentEndpoint = "/api/chat";
+    const pdfBaseUrl = 'https://your-cdn.example.com/db-cooper-files';
     console.log("ACTUAL ENDPOINT URL:", agentEndpoint);
     console.log("ENDPOINT URL LENGTH:", agentEndpoint.length);
     console.log("ENDPOINT URL TYPE:", typeof agentEndpoint);
@@ -224,6 +225,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const respText = jsonResult.response ?? JSON.stringify(jsonResult);
             summary.textContent = 'Answer';
             answerContent.innerHTML = marked.parse(respText);
+            // Append source links if retrieval info present
+            const retrievals = jsonResult.retrieval_info?.results || [];
+            if (retrievals.length) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.classList.add('sources');
+                sourcesDiv.innerHTML = '<strong>Sources:</strong> ';
+                retrievals.forEach((item, idx) => {
+                    const srcPath = item.metadata?.source || item.source || item.id || '';
+                    if (!srcPath) return;
+                    const baseName = srcPath.replace(/\.md$/i, '');
+                    const pdfName = `${baseName}.pdf`;
+                    const url = `${pdfBaseUrl}/${encodeURIComponent(pdfName)}`;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.textContent = pdfName;
+                    a.target = '_blank';
+                    sourcesDiv.appendChild(a);
+                    if (idx < retrievals.length - 1) sourcesDiv.appendChild(document.createTextNode(', '));
+                });
+                answerContent.appendChild(sourcesDiv);
+            }
             messageInput.disabled = false;
             sendButton.disabled = false;
             return;
