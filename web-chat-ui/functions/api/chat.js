@@ -17,9 +17,9 @@ export async function onRequest({ request, env }) {
     return new Response('Missing `query`', { status: 400, statusText: 'Missing query' });
   }
   try {
-    console.log('[CHAT][SERVER] aiSearch params:', { query, include_retrieval_info: true, rewrite_query: true, max_num_results, match_threshold });
     const cfg = autoragConfig;
-    const result = await env.AI.autorag('db-cooper-autorag').aiSearch({
+    // Prepare parameters for aiSearch
+    const params = {
       query,
       include_retrieval_info: true,
       rewrite_query: cfg.rewrite_query,
@@ -28,9 +28,15 @@ export async function onRequest({ request, env }) {
       stream: cfg.stream
       // model: cfg.model,
       // filters: cfg.filters
-    });
-    console.log('[CHAT][SERVER] aiSearch result:', JSON.stringify(result, null, 2));
-    return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
+    };
+    console.log('[CHAT][SERVER] aiSearch params:', params);
+    const aiResponse = await env.AI.autorag('db-cooper-autorag').aiSearch(params);
+    if (cfg.stream) {
+      console.log('[CHAT][SERVER] streaming enabled, piping response as event-stream');
+      return new Response(aiResponse.body, { headers: { 'Content-Type': 'text/event-stream' } });
+    }
+    console.log('[CHAT][SERVER] aiSearch result:', JSON.stringify(aiResponse, null, 2));
+    return new Response(JSON.stringify(aiResponse), { headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
     console.error('AutoRAG aiSearch error:', err);
     return new Response(JSON.stringify({ response: err.message }), { headers: { 'Content-Type': 'application/json' } });

@@ -220,6 +220,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.includes('event-stream')) {
+                // STREAMING response handling
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                summary.textContent = '';
+                answerContent.innerHTML = '';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split(/\r?\n/);
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const chunk = line.slice(6);
+                        try {
+                            const dataObj = JSON.parse(chunk);
+                            const delta = dataObj.response_delta || dataObj.response || '';
+                            answerContent.innerHTML += marked.parse(delta);
+                            messageList.scrollTop = messageList.scrollHeight;
+                        } catch (e) {
+                            console.error('[CHAT] streaming parse error', e);
+                        }
+                    }
+                }
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                return;
+            }
+
             // Non-streaming JSON response handling
             const jsonResult = await response.json();
             console.log('[CHAT] Full API response:', jsonResult);
