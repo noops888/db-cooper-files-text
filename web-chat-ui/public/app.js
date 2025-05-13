@@ -222,17 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Non-streaming JSON response handling
             const jsonResult = await response.json();
+            console.log('[CHAT] jsonResult:', jsonResult);
             const respText = jsonResult.response ?? JSON.stringify(jsonResult);
             summary.textContent = 'Answer';
             answerContent.innerHTML = marked.parse(respText);
             // Append source links if retrieval info present
-            const retrievals = jsonResult.retrieval_info?.results || [];
+            const retrievals = Array.isArray(jsonResult.data) ? jsonResult.data : [];
+            console.log('[CHAT] retrievals:', retrievals);
             if (retrievals.length) {
                 const sourcesDiv = document.createElement('div');
                 sourcesDiv.classList.add('sources');
                 sourcesDiv.innerHTML = '<strong>Sources:</strong> ';
                 retrievals.forEach((item, idx) => {
-                    const srcPath = item.metadata?.source || item.source || item.id || '';
+                    const srcPath = item.filename || item.metadata?.source || item.source || item.id || '';
                     if (!srcPath) return;
                     const baseName = srcPath.replace(/\.md$/i, '');
                     const pdfName = `${baseName}.pdf`;
