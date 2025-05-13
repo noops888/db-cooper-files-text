@@ -24,7 +24,7 @@ export const autoragConfig = {
     score_threshold: 0.4
   },
   // Stream results as they are available. Defaults to false.
-  stream: true,
+  stream: false,
   // model: '@cf/meta/llama-3.3-70b-instruct-sd',
   // filters: {}
 };
