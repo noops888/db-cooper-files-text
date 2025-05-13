@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Details - Injected from environment variable
     const agentEndpoint = "/api/chat";
-    const pdfBaseUrl = 'https://your-cdn.example.com/db-cooper-files';
+    const pdfBaseUrl = 'https://pdf.dbcooper.xyz';
     console.log("ACTUAL ENDPOINT URL:", agentEndpoint);
     console.log("ENDPOINT URL LENGTH:", agentEndpoint.length);
     console.log("ENDPOINT URL TYPE:", typeof agentEndpoint);
