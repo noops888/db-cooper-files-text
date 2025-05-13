@@ -226,6 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+                let markdown = '';
+                let retrievals = [];
                 summary.textContent = '';
                 answerContent.innerHTML = '';
                 while (true) {
@@ -239,13 +241,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         const chunk = line.slice(6);
                         try {
                             const dataObj = JSON.parse(chunk);
-                            const delta = dataObj.response_delta || dataObj.response || '';
-                            answerContent.innerHTML += marked.parse(delta);
-                            messageList.scrollTop = messageList.scrollHeight;
+                            // collect retrieval_info
+                            if (Array.isArray(dataObj.retrieval_info?.results)) {
+                                retrievals = dataObj.retrieval_info.results;
+                            }
+                            // append markdown chunks
+                            if ('response_delta' in dataObj || 'response' in dataObj) {
+                                const delta = dataObj.response_delta || dataObj.response || '';
+                                markdown += delta;
+                                answerContent.innerHTML = marked.parse(markdown);
+                                messageList.scrollTop = messageList.scrollHeight;
+                            }
                         } catch (e) {
                             console.error('[CHAT] streaming parse error', e);
                         }
                     }
+                }
+                // append sources after streaming
+                if (retrievals.length) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.classList.add('sources');
+                    sourcesDiv.innerHTML = '<strong>Sources:</strong> ';
+                    retrievals.forEach((item, idx) => {
+                        const srcPath = item.filename || item.metadata?.source || item.source || item.id || '';
+                        if (!srcPath) return;
+                        const baseName = srcPath.replace(/\.md$/i, '');
+                        const pdfName = `${baseName}.pdf`;
+                        const url = `${pdfBaseUrl}/${encodeURIComponent(pdfName)}`;
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.textContent = pdfName;
+                        a.target = '_blank';
+                        sourcesDiv.appendChild(a);
+                        if (idx < retrievals.length - 1) sourcesDiv.appendChild(document.createTextNode(', '));
+                    });
+                    answerContent.appendChild(sourcesDiv);
                 }
                 messageInput.disabled = false;
                 sendButton.disabled = false;
