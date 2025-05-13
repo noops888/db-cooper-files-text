@@ -33,13 +33,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Details - Injected from environment variable
     const agentEndpoint = "/api/chat";
     const pdfBaseUrl = 'https://pdf.dbcooper.xyz';
-    // Function to linkify .md filenames into PDF links
-    function linkifyDocs(text) {
-      return text.replace(/\b([\w\d_]+\.md)\b/g, (match, filename) => {
-        const base = filename.replace(/\.md$/i, '');
-        const url = `${pdfBaseUrl}/${encodeURIComponent(base)}.pdf`;
-        return `[${filename}](${url})`;
-      });
+    // Wrap .md filenames in <a> tags within a container element
+    function wrapDocs(element) {
+      const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        { acceptNode: node => /\b[\w\d_]+\.md\b/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT }
+      );
+      const nodes = [];
+      let node;
+      while (node = walker.nextNode()) {
+        if (node.parentNode.nodeName.toLowerCase() !== 'a') nodes.push(node);
+      }
+      for (const textNode of nodes) {
+        const parts = textNode.nodeValue.split(/([\w\d_]+\.md)/g);
+        const frag = document.createDocumentFragment();
+        parts.forEach(part => {
+          if (/^[\w\d_]+\.md$/.test(part)) {
+            const a = document.createElement('a');
+            const base = part.replace(/\.md$/i, '');
+            a.href = `${pdfBaseUrl}/${encodeURIComponent(base)}.pdf`;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = part;
+            frag.appendChild(a);
+          } else {
+            frag.appendChild(document.createTextNode(part));
+          }
+        });
+        textNode.parentNode.replaceChild(frag, textNode);
+      }
     }
     console.log("ACTUAL ENDPOINT URL:", agentEndpoint);
     console.log("ENDPOINT URL LENGTH:", agentEndpoint.length);
@@ -256,10 +279,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             if ('response_delta' in dataObj || 'response' in dataObj) {
                                 const delta = dataObj.response_delta || dataObj.response || '';
                                 markdown += delta;
-                                const linked = linkifyDocs(markdown);
-                                answerContent.innerHTML = marked.parse(linked);
-                                // make links open in new tab
-                                answerContent.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+                                const html = marked.parse(markdown);
+                                answerContent.innerHTML = html;
+                                wrapDocs(answerContent);
                                 messageList.scrollTop = messageList.scrollHeight;
                             }
                         } catch (e) {
@@ -302,9 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
               console.error('[CHAT] No retrieval data in response:', jsonResult);
             }
             summary.textContent = 'Answer';
-            answerContent.innerHTML = marked.parse(linkifyDocs(respText));
-            // make links open in new tab
-            answerContent.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+            const html = marked.parse(respText);
+            answerContent.innerHTML = html;
+            wrapDocs(answerContent);
             // Append source links if retrieval info present
             const retrievals = Array.isArray(jsonResult.retrieval_info?.results)
               ? jsonResult.retrieval_info.results
