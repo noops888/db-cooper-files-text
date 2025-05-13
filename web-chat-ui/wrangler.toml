@@ -1,11 +1,12 @@
 name = "db-cooper-chat"
 account_id = "1c1828392bd0f161f87d6d0117f3b38f"
 compatibility_date = "2025-05-13"
-main = "functions/index.js"
-type = "javascript"
 
 [site]
   bucket = "./public"
 
 [ai]
   binding = "AI"
+
+[functions]
+  directory = "functions"

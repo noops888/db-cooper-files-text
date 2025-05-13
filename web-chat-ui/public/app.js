@@ -222,12 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Non-streaming JSON response handling
             const jsonResult = await response.json();
-            console.log('[CHAT] jsonResult:', jsonResult);
+            console.log('[CHAT] Full API response:', jsonResult);
             const respText = jsonResult.response ?? JSON.stringify(jsonResult);
+            if (!jsonResult.retrieval_info?.results && !Array.isArray(jsonResult.data)) {
+              console.error('[CHAT] No retrieval data in response:', jsonResult);
+            }
             summary.textContent = 'Answer';
             answerContent.innerHTML = marked.parse(respText);
             // Append source links if retrieval info present
-            const retrievals = Array.isArray(jsonResult.data) ? jsonResult.data : [];
+            const retrievals = Array.isArray(jsonResult.retrieval_info?.results)
+              ? jsonResult.retrieval_info.results
+              : Array.isArray(jsonResult.data)
+                ? jsonResult.data
+                : [];
             console.log('[CHAT] retrievals:', retrievals);
             if (retrievals.length) {
                 const sourcesDiv = document.createElement('div');
