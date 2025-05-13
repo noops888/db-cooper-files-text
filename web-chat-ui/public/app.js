@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Details - Injected from environment variable
     const agentEndpoint = "/api/chat";
     const pdfBaseUrl = 'https://pdf.dbcooper.xyz';
+    // Function to linkify .md filenames into PDF links
+    function linkifyDocs(text) {
+      return text.replace(/\b([\w\d_]+\.md)\b/g, (match, filename) => {
+        const base = filename.replace(/\.md$/i, '');
+        const url = `${pdfBaseUrl}/${encodeURIComponent(base)}.pdf`;
+        return `[${filename}](${url})`;
+      });
+    }
     console.log("ACTUAL ENDPOINT URL:", agentEndpoint);
     console.log("ENDPOINT URL LENGTH:", agentEndpoint.length);
     console.log("ENDPOINT URL TYPE:", typeof agentEndpoint);
@@ -248,7 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             if ('response_delta' in dataObj || 'response' in dataObj) {
                                 const delta = dataObj.response_delta || dataObj.response || '';
                                 markdown += delta;
-                                answerContent.innerHTML = marked.parse(markdown);
+                                const linked = linkifyDocs(markdown);
+                                answerContent.innerHTML = marked.parse(linked);
                                 messageList.scrollTop = messageList.scrollHeight;
                             }
                         } catch (e) {
@@ -291,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
               console.error('[CHAT] No retrieval data in response:', jsonResult);
             }
             summary.textContent = 'Answer';
-            answerContent.innerHTML = marked.parse(respText);
+            answerContent.innerHTML = marked.parse(linkifyDocs(respText));
             // Append source links if retrieval info present
             const retrievals = Array.isArray(jsonResult.retrieval_info?.results)
               ? jsonResult.retrieval_info.results

@@ -14,6 +14,8 @@ FBI Vault link: https://vault.fbi.gov/D-B-Cooper%20
   - [Download Script](#download-script)
   - [Extraction Scripts](#extraction-scripts)
   - [Extracted Text](#extracted-text)
+  - [Azure Extraction](#azure-extraction)
+  - [Web Chat UI](#web-chat-ui)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -29,7 +31,11 @@ The D.B. Cooper Files Text repository provides a dataset of FBI case files relat
 ├── extraction_scripts/     # PDF-to-text conversion scripts
 │   ├── linux/              # Linux-specific OCR (Tesseract)
 │   └── macOS/              # macOS-specific OCR (Apple Vision)
-└── extracted_text/         # Extracted text files from PDFs
+├── extracted_text/         # Extracted text files from PDFs
+├── azure/                  # Azure AI Document Intelligence outputs
+│   ├── pdf/                # PDF files used for Azure extraction
+│   └── json/               # JSON outputs: extracted text, schema, and search backup
+└── web-chat-ui/           # Chatbot frontend (Cloudflare Pages + Workers)
 ```
 
 ## Current Status
@@ -42,6 +48,8 @@ The D.B. Cooper Files Text repository provides a dataset of FBI case files relat
 - Python 3.8+
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) (for Linux scripts)
 - macOS 10.15 (Catalina) or later (for Apple Vision scripts)
+- Node.js 14+ (for web-chat-ui)
+- Wrangler CLI (`npm install -g wrangler`)
 
 ## Installation
 1. Clone the repository:
@@ -83,6 +91,31 @@ Convert PDFs to text:
 ### Extracted Text
 Plain text files are generated in `extracted_text/`, named after their source PDF.
 
+### Azure JSON
+JSON outputs from Azure AI Document Intelligence are stored in `azure/json/`, including the index schema and search backup.
+
+### Web Chat UI
+The `web-chat-ui/` directory contains a Cloudflare Pages site and API Functions for your chatbot.
+
+1. Navigate to the directory and install dependencies:
+
+```bash
+cd web-chat-ui
+npm install
+```
+
+2. Run locally:
+
+```bash
+wrangler pages dev
+# or
+npm run dev
+```
+
+3. Open your browser to http://localhost:8787
+
+4. Modify `functions/api/autoragConfig.js` to adjust AI search parameters as needed.
+
 ## Contributing
 Contributions are welcome! Please open issues or submit pull requests.
 
@@ -90,6 +123,11 @@ Contributions are welcome! Please open issues or submit pull requests.
 2. Create a branch: `git checkout -b feature/YourFeature`
 3. Commit your changes.
 4. Push and open a PR.
+
+## Azure Extraction
+The `azure/` directory contains outputs from Azure AI Document Intelligence:
+- `azure/pdf/`: Original PDF files supplied for extraction.
+- `azure/json/`: JSON files containing extracted text, index schema, and a backup of search results.
 
 ## License
 All FBI documents are in the public domain. Scripts and code are licensed under the MIT License. See [LICENSE](LICENSE) for details.

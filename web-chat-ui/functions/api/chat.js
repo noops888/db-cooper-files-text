@@ -35,6 +35,7 @@ export async function onRequest({ request, env }) {
     if (cfg.stream) {
       console.log('[CHAT][SERVER] streaming enabled, fetching metadata for retrievals');
       // fetch non-streaming metadata for sources
+      // metadata fetch: use configured threshold and rewrite settings
       const metaParams = { ...params, stream: false };
       const metaResult = await env.AI.autorag('db-cooper-autorag').aiSearch(metaParams);
       const retrievals = Array.isArray(metaResult.retrieval_info?.results)
