@@ -8,20 +8,20 @@ export async function onRequest({ request, env }) {
   } catch {
     return new Response('Invalid JSON', { status: 400, statusText: 'Invalid JSON' });
   }
-  const { query, max_num_results = 10, ranking_options = { score_threshold: 0 } } = data;
+  const { query, max_num_results = 10, match_threshold = 0 } = data;
   console.log('[CHAT][SERVER] Raw request data:', JSON.stringify(data));
-  console.log('[CHAT][SERVER] Parsed params:', { query, max_num_results, ranking_options });
+  console.log('[CHAT][SERVER] Parsed params:', { query, max_num_results, match_threshold });
   if (!query) {
     return new Response('Missing `query`', { status: 400, statusText: 'Missing query' });
   }
   try {
-    console.log('[CHAT][SERVER] aiSearch params:', { query, include_retrieval_info: true, rewrite_query: true, max_num_results, ranking_options });
+    console.log('[CHAT][SERVER] aiSearch params:', { query, include_retrieval_info: true, rewrite_query: true, max_num_results, match_threshold });
     const result = await env.AI.autorag('db-cooper-autorag').aiSearch({
       query,
       include_retrieval_info: true,
       rewrite_query: true,
       max_num_results,
-      ranking_options
+      match_threshold
     });
     console.log('[CHAT][SERVER] aiSearch result:', JSON.stringify(result, null, 2));
     return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
