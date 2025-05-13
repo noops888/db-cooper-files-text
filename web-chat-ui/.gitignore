@@ -25,3 +25,10 @@ __pycache__/
 
 # Log files
 *.log
+
+# Cloudflare AutoRAG docs
+docs/
+
+# example-ui
+example-ui/
+
