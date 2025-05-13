@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Details - Injected from environment variable
     const agentEndpoint = "/api/chat";
+    const pdfBaseUrl = 'https://pdf.dbcooper.xyz';
     console.log("ACTUAL ENDPOINT URL:", agentEndpoint);
     console.log("ENDPOINT URL LENGTH:", agentEndpoint.length);
     console.log("ENDPOINT URL TYPE:", typeof agentEndpoint);
@@ -219,11 +220,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.includes('event-stream')) {
+                // STREAMING response handling
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let markdown = '';
+                let retrievals = [];
+                // keep 'Thinking...' until complete
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split(/\r?\n/);
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const chunk = line.slice(6);
+                        try {
+                            const dataObj = JSON.parse(chunk);
+                            // collect retrieval_info
+                            if (Array.isArray(dataObj.retrieval_info?.results)) {
+                                retrievals = dataObj.retrieval_info.results;
+                            }
+                            // append markdown chunks
+                            if ('response_delta' in dataObj || 'response' in dataObj) {
+                                const delta = dataObj.response_delta || dataObj.response || '';
+                                markdown += delta;
+                                answerContent.innerHTML = marked.parse(markdown);
+                                messageList.scrollTop = messageList.scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error('[CHAT] streaming parse error', e);
+                        }
+                    }
+                }
+                // mark completion
+                summary.textContent = 'Answer';
+                // append sources after streaming
+                if (retrievals.length) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.classList.add('sources');
+                    sourcesDiv.innerHTML = '<strong>Sources:</strong> ';
+                    retrievals.forEach((item, idx) => {
+                        const srcPath = item.filename || item.metadata?.source || item.source || item.id || '';
+                        if (!srcPath) return;
+                        const baseName = srcPath.replace(/\.md$/i, '');
+                        const pdfName = `${baseName}.pdf`;
+                        const url = `${pdfBaseUrl}/${encodeURIComponent(pdfName)}`;
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.textContent = pdfName;
+                        a.target = '_blank';
+                        sourcesDiv.appendChild(a);
+                        if (idx < retrievals.length - 1) sourcesDiv.appendChild(document.createTextNode(', '));
+                    });
+                    answerContent.appendChild(sourcesDiv);
+                }
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                return;
+            }
+
             // Non-streaming JSON response handling
             const jsonResult = await response.json();
+            console.log('[CHAT] Full API response:', jsonResult);
             const respText = jsonResult.response ?? JSON.stringify(jsonResult);
+            if (!jsonResult.retrieval_info?.results && !Array.isArray(jsonResult.data)) {
+              console.error('[CHAT] No retrieval data in response:', jsonResult);
+            }
             summary.textContent = 'Answer';
             answerContent.innerHTML = marked.parse(respText);
+            // Append source links if retrieval info present
+            const retrievals = Array.isArray(jsonResult.retrieval_info?.results)
+              ? jsonResult.retrieval_info.results
+              : Array.isArray(jsonResult.data)
+                ? jsonResult.data
+                : [];
+            console.log('[CHAT] retrievals:', retrievals);
+            if (retrievals.length) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.classList.add('sources');
+                sourcesDiv.innerHTML = '<strong>Sources:</strong> ';
+                retrievals.forEach((item, idx) => {
+                    const srcPath = item.filename || item.metadata?.source || item.source || item.id || '';
+                    if (!srcPath) return;
+                    const baseName = srcPath.replace(/\.md$/i, '');
+                    const pdfName = `${baseName}.pdf`;
+                    const url = `${pdfBaseUrl}/${encodeURIComponent(pdfName)}`;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.textContent = pdfName;
+                    a.target = '_blank';
+                    sourcesDiv.appendChild(a);
+                    if (idx < retrievals.length - 1) sourcesDiv.appendChild(document.createTextNode(', '));
+                });
+                answerContent.appendChild(sourcesDiv);
+            }
             messageInput.disabled = false;
             sendButton.disabled = false;
             return;
