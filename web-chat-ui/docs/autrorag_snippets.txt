@@ -1,0 +1,50 @@
+
+Call AutoRAG from anywhere using the Workers Binding
+
+If you don’t already have a Worker, you can create one with the command line. 
+
+Binding
+Add the AutoRAG binding to your Worker’s Wrangler configuration file.
+wrangler.jsonc
+
+{
+  "ai": {
+    "binding": "AI"
+  }
+}
+
+wrangler.toml
+
+[ai]
+binding = "AI"
+
+
+Snippet
+Add this snippet to your Worker to call this AutoRAG.
+
+AI Search
+
+const answer = await env.AI.autorag("db-cooper-autorag").aiSearch({
+  query: "",
+});
+
+Search
+
+const answer = await env.AI.autorag("db-cooper-autorag").search({
+  query: "",
+});
+
+
+or API
+
+
+curl https://api.cloudflare.com/client/v4/accounts/1c1828392bd0f161f87d6d0117f3b38f/autorag/rags/db-cooper-autorag/ai-search \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer {API_TOKEN}' \
+    -d '{
+      "query": ""
+    }'
+
+Docs: https://developers.cloudflare.com/autorag/
+
+
